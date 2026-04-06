@@ -1,0 +1,7 @@
+autobahn
+evennia
+django
+mock
+parameterized
+twisted
+setuptools
