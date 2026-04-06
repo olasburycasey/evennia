@@ -18,12 +18,10 @@ from evennia.utils import utils
 from evennia.utils.ansi import ANSIString
 from evennia.utils.test_resources import BaseEvenniaTest
 from evennia.utils.utils import class_from_module
-<<<<<<< HEAD
+
 from evennia.utils.utils import crop
-=======
+
 from evennia.utils.utils import time_format
-    
->>>>>>> omkar-first-issue
 
 
 class TestIsIter(TestCase):
@@ -1073,7 +1071,6 @@ class TestMatchIP(TestCase):
         self.assertFalse(utils.match_ip("192.168.0.1", "10.0.0.1"))
 
 
-<<<<<<< HEAD
 class TestCrop(TestCase):
     """Tests for the crop() utility function."""
 
@@ -1101,7 +1098,7 @@ class TestCrop(TestCase):
         """An empty string should be returned as-is."""
         result = crop("", width=10)
         self.assertEqual(result, "")
-=======
+
 class TestTimeFormat(TestCase):
     """
     Test the time_format utility function.
@@ -1118,6 +1115,4 @@ class TestTimeFormat(TestCase):
         """Test formatting larger, complex times."""
         # 3660 seconds (1 hour, 1 min) should format to 01:01
         self.assertEqual(time_format(3660), "01:01")
-        
 
->>>>>>> omkar-first-issue
