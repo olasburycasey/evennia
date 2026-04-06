@@ -18,6 +18,7 @@ from evennia.utils import utils
 from evennia.utils.ansi import ANSIString
 from evennia.utils.test_resources import BaseEvenniaTest
 from evennia.utils.utils import class_from_module
+from evennia.utils.utils import crop
 
 
 class TestIsIter(TestCase):
@@ -1065,3 +1066,32 @@ class TestMatchIP(TestCase):
         self.assertTrue(utils.match_ip("192.168.0.1", "192.168.0.0/24"))
         self.assertTrue(utils.match_ip("192.168.0.1", "192.168.0.1"))
         self.assertFalse(utils.match_ip("192.168.0.1", "10.0.0.1"))
+
+
+class TestCrop(TestCase):
+    """Tests for the crop() utility function."""
+
+    def test_short_text_unchanged(self):
+        """Text shorter than width should be returned as-is."""
+        result = crop("hello", width=10)
+        self.assertEqual(result, "hello")
+
+    def test_exact_width_unchanged(self):
+        """Text exactly equal to width should be returned as-is."""
+        result = crop("12345", width=5)
+        self.assertEqual(result, "12345")
+
+    def test_long_text_cropped_with_default_suffix(self):
+        """Text longer than width should be cropped with '[...]' suffix."""
+        result = crop("This is a long string", width=15)
+        self.assertEqual(result, "This is a [...]")
+
+    def test_custom_suffix(self):
+        """Cropping should use a custom suffix when provided."""
+        result = crop("This is a long string", width=15, suffix="...")
+        self.assertEqual(result, "This is a lo...")
+
+    def test_empty_string(self):
+        """An empty string should be returned as-is."""
+        result = crop("", width=10)
+        self.assertEqual(result, "")
