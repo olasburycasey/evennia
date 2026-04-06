@@ -235,8 +235,9 @@ class ANSIParser(object):
         xterm256_gbg += settings.COLOR_XTERM256_EXTRA_GBG
         ansi_xterm256_bright_bg_map += settings.COLOR_ANSI_XTERM256_BRIGHT_BG_EXTRA_MAP
 
-    mxp_re = r"\|lc(.*?)\|lt(.*?)\|le"
-    mxp_url_re = r"\|lu(.*?)\|lt(.*?)\|le"
+    mxp_re = r"\|lc.*?\|lt"
+    mxp_url_re = r"\|lu.*?\|lt"
+    mxp_end_re = r"\|le"
 
     # prepare regex matching
     brightbg_sub = re.compile(
@@ -250,15 +251,15 @@ class ANSIParser(object):
 
     # xterm256_sub = re.compile(r"|".join([tup[0] for tup in xterm256_map]), re.DOTALL)
     ansi_sub = re.compile(r"|".join([re.escape(tup[0]) for tup in ansi_map]), re.DOTALL)
-    mxp_sub = re.compile(mxp_re, re.DOTALL)
-    mxp_url_sub = re.compile(mxp_url_re, re.DOTALL)
+    mxp_sub = re.compile(r"\|lc(.*?)\|lt(.*?)\|le", re.DOTALL)
+    mxp_url_sub = re.compile(r"\|lu(.*?)\|lt(.*?)\|le", re.DOTALL)
 
     # used by regex replacer to correctly map ansi sequences
     ansi_map_dict = dict(ansi_map)
     ansi_xterm256_bright_bg_map_dict = dict(ansi_xterm256_bright_bg_map)
 
     # prepare matching ansi codes overall
-    ansi_re = r"\033\[[0-9;]+m"
+    ansi_re = r"(\033\[[0-9;]+m|%s|%s|%s)" % (mxp_re, mxp_url_re, mxp_end_re)
     ansi_regex = re.compile(ansi_re)
 
     # escapes - these double-chars will be replaced with a single

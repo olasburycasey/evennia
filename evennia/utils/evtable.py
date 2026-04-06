@@ -137,7 +137,7 @@ def _to_ansi(obj):
     if is_iter(obj):
         return [_to_ansi(o) for o in obj]
     else:
-        return ANSIString(strip_mxp(str(obj)))
+        return ANSIString(str(obj))
 
 
 _whitespace = "\t\n\x0b\x0c\r "
@@ -1266,6 +1266,7 @@ class EvTable:
                 # put different bottom line for header
                 ret["border_bottom"] = bwidth
                 ret["border_bottom_char"] = headchar
+                ret["valign"] = "t"
             return ret
 
         # use the helper functions to define various
