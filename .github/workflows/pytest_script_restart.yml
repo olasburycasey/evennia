@@ -1,0 +1,41 @@
+name: pytest-script-restart
+
+on:
+  push:
+    branches: Shawn_individual_issue
+  pull_request:
+    branches: Shawn_individual_issue
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install wheel
+          pip install .
+          pip install pytest pytest-django
+
+      - name: Initialize evennia
+        run: |
+          evennia --init testing_mygame
+
+      - name: Run migrations
+        working-directory: testing_mygame
+        run: |
+          evennia migrate
+
+      - name: Run pytest
+        working-directory: testing_mygame
+        env:
+          DJANGO_SETTINGS_MODULE: server.conf.settings
+        run: |
+          pytest ../test_files_folder/test_script_restart.py
