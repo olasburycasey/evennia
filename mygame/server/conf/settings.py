@@ -34,6 +34,10 @@ from evennia.settings_default import *
 # This is the name of your game. Make it catchy!
 SERVERNAME = "mygame"
 
+# The time factor dictates if the game world runs faster (timefactor>1)
+# or slower (timefactor<1) than the real world.
+TIME_FACTOR = 60.0
+
 
 ######################################################################
 # Settings given in secret_settings.py override those in this file.
