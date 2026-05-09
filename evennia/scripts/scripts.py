@@ -251,6 +251,10 @@ class ScriptBase(ScriptDB, metaclass=TypeclassBase):
                 self.db_interval, now=not self.db_start_delay, start_delay=start_delay
             )
 
+        if not self.is_active:
+            self.db_is_active = True
+            self.save(update_fields=["db_is_active"])
+
         self.at_start(**kwargs)
 
     def _pause_task(self, auto_pause=False, **kwargs):
