@@ -1459,7 +1459,7 @@ def all_from_module(module):
         return {}
     # make sure to only return variables actually defined in this
     # module if available (try to avoid imports)
-    members = getmembers(mod, predicate=lambda obj: getmodule(obj) in (mod, None))
+    members = getmembers(mod, predicate=lambda obj: isinstance(obj, dict) or getmodule(obj) in (mod, None))
     return dict((key, val) for key, val in members if not key.startswith("_"))
 
 
