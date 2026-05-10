@@ -1722,6 +1722,13 @@ class DefaultObject(ObjectDB, metaclass=TypeclassBase):
             # we need to wipe any old plurals/an/a in case key changed in the interrim
             self.aliases.clear(category=self.plural_category)
             self.aliases.add(plural, category=self.plural_category)
+            # also store the bare plural (e.g. "rocks") so that searching "rocks" matches
+            # all objects of this type, not just the one whose count-prefixed alias happened
+            # to partially match. Use raw_key (not the display key) to avoid ANSI codes in
+            # the stored alias, mirroring how the object's key is indexed for search.
+            bare_plural = str(_INFLECT.plural(raw_key))
+            if bare_plural != str(plural):
+                self.aliases.add(bare_plural, category=self.plural_category)
             # save the singular form as an alias here too so we can display "an egg" and also
             # look at 'an egg'.
             self.aliases.add(singular, category=self.plural_category)
