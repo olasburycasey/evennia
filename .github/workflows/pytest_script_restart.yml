@@ -2,9 +2,9 @@ name: pytest-script-restart
 
 on:
   push:
-    branches: Shawn_individual_issue
+    branches: [main, Shawn_individual_issue]
   pull_request:
-    branches: Shawn_individual_issue
+    branches: [main, Shawn_individual_issue]
 
 jobs:
   test:
