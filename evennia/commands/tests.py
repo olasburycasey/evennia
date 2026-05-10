@@ -1425,3 +1425,44 @@ class TestIssue2627(TwistedTestCase, BaseEvenniaTest):
 
         d.addCallback(_callback)
         return d
+
+class _MockCmdInventory(Command):
+    key = "inventory"
+    aliases = ["inv", "i"]
+
+class _MockCmdExit(Command):
+    key = "in"
+    aliases = ["i"]
+
+class TestIssue3878(TestCase):
+    """
+    Tests that higher priority commands strip clashing aliases from lower priority during 
+    CmdSet union merges
+    https://github.com/evennia/evennia/issues/3878
+    """
+    def test_issue_3878_alias_stripping(self):
+        # set up the low-priority inventory command
+        cmd_inv = _MockCmdInventory()
+        set_inv = CmdSet()
+        set_inv.add(cmd_inv)
+        set_inv.priority = 0
+
+        # set up the high priority exit command
+        cmd_exit = _MockCmdExit()
+        set_exit = CmdSet()
+        set_exit.add(cmd_exit)
+        set_exit.priority = 10
+
+        # merge them
+        merged_set = set_inv + set_exit
+
+        # Testing the invenmtory command survive the merge
+        merged_keys = [cmd.key for cmd in merged_set.commands]
+        self.assertIn("inventory", merged_keys, "The inventory command was completely deleted ")
+
+        # Testing the non clashiong alias 'inv' survive
+        surviving_inv_cmd = merged_set.get("inventory")
+        self.assertIn("inv", surviving_inv_cmd, " The 'inv' alias was incorrectly stripped")
+
+        # Testing the clashing alias 'i'
+        self.assertNotIn("i", surviving_inv_cmd.aliases,"The clashing alias 'i' was not stripped ")
