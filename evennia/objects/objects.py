@@ -1671,67 +1671,39 @@ class DefaultObject(ObjectDB, metaclass=TypeclassBase):
             return f"(#{self.id})"
         return ""
 
+    def _register_plural_aliases(self):
+        raw_key = self.name
+        clean_key = ansi.ANSIString(raw_key).clean()
+
+        bare_plural = str(_INFLECT.plural(raw_key))
+        singular = _INFLECT.an(clean_key)
+
+        self.aliases.clear(category=self.plural_category)
+        self.aliases.add(bare_plural, category=self.plural_category)
+        self.aliases.add(singular, category=self.plural_category)
+
+    def at_object_creation(self):
+        self._register_plural_aliases()
+
     def get_numbered_name(self, count, looker, **kwargs):
-        """
-        Return the numbered (singular, plural) forms of this object's key. This is by default called
-        by return_appearance and is used for grouping multiple same-named of this object. Note that
-        this will be called on *every* member of a group even though the plural name will be only
-        shown once. Also the singular display version, such as 'an apple', 'a tree' is determined
-        from this method.
-
-        Args:
-            count (int): Number of objects of this type
-            looker (DefaultObject): Onlooker. Not used by default.
-
-        Keyword Args:
-            key (str): Optional key to pluralize. If not given, the object's `.get_display_name()`
-                method is used.
-            return_string (bool): If `True`, return only the singular form if count is 0,1 or
-                the plural form otherwise. If `False` (default), return both forms as a tuple.
-            no_article (bool): If `True`, do not return an article if `count` is 1.
-
-        Returns:
-            tuple: This is a tuple `(str, str)` with the singular and plural forms of the key
-            including the count.
-
-        Examples:
-        ::
-
-            obj.get_numbered_name(3, looker, key="foo")
-                  -> ("a foo", "three foos")
-            obj.get_numbered_name(1, looker, key="Foobert", return_string=True)
-                  -> "a Foobert"
-            obj.get_numbered_name(1, looker, key="Foobert", return_string=True, no_article=True)
-                  -> "Foobert"
-        """
         key = kwargs.get("key", self.get_display_name(looker))
         raw_key = self.name
-        key = ansi.ANSIString(key)  # this is needed to allow inflection of colored names
-        clean_key = key.clean()  # remove color code from object
+        key = ansi.ANSIString(key)
+        clean_key = key.clean()
 
         try:
             plural = _INFLECT.plural(clean_key, count)
             plural = "{} {}".format(_INFLECT.number_to_words(count, threshold=12), plural)
             plural = plural.replace(clean_key, str(key))
         except IndexError:
-            # this is raised by inflect if the input is not a proper noun
             plural = key
         singular = _INFLECT.an(clean_key)
         singular = singular.replace(clean_key, str(key))
+
         if not self.aliases.get(plural, category=self.plural_category):
-            # we need to wipe any old plurals/an/a in case key changed in the interrim
-            self.aliases.clear(category=self.plural_category)
+            self._register_plural_aliases()
+            # still need to add the count-prefixed plural e.g. "three rocks"
             self.aliases.add(plural, category=self.plural_category)
-            # also store the bare plural (e.g. "rocks") so that searching "rocks" matches
-            # all objects of this type, not just the one whose count-prefixed alias happened
-            # to partially match. Use raw_key (not the display key) to avoid ANSI codes in
-            # the stored alias, mirroring how the object's key is indexed for search.
-            bare_plural = str(_INFLECT.plural(raw_key))
-            if bare_plural != str(plural):
-                self.aliases.add(bare_plural, category=self.plural_category)
-            # save the singular form as an alias here too so we can display "an egg" and also
-            # look at 'an egg'.
-            self.aliases.add(singular, category=self.plural_category)
 
         if kwargs.get("no_article") and count == 1:
             if kwargs.get("return_string"):
@@ -2043,14 +2015,6 @@ class DefaultObject(ObjectDB, metaclass=TypeclassBase):
         setup after the object is created. An example of this is
         EXITs, who need to know keys, aliases, locks etc to set up
         their exit-cmdsets.
-
-        """
-        pass
-
-    def at_object_creation(self):
-        """
-        Called once, when this object is first created. This is the
-        normal hook to overload for most object types.
 
         """
         pass
