@@ -8,6 +8,7 @@ import time
 import traceback
 
 import django
+import django.db
 from django.conf import settings
 from django.db import connection
 from django.db.utils import OperationalError
@@ -187,6 +188,10 @@ class EvenniaServerService(MultiService):
 
         # clear server startup mode
         try:
+            # Close stale DB connections inherited from the pre-fork parent
+            # process. Python 3.14's sqlite3 module is not fork-safe and will
+            # raise MemoryError if a pre-fork connection is reused.
+            django.db.connections.close_all()
             evennia.ServerConfig.objects.conf("server_starting_mode", delete=True)
         except OperationalError:
             print("Server server_starting_mode couldn't unset - db not set up.")

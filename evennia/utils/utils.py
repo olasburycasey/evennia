@@ -6,6 +6,7 @@ They provide some useful string and conversion methods that might
 be of use when designing your own game.
 
 """
+
 import gc
 import importlib
 import importlib.machinery
@@ -23,13 +24,14 @@ import traceback
 import types
 from ast import literal_eval
 from collections import OrderedDict, defaultdict
+from collections.abc import Callable
 from inspect import getmembers, getmodule, getmro, ismodule, trace
 from os.path import join as osjoin
 from string import punctuation
-from unicodedata import east_asian_width
-from collections.abc import Callable
 from typing import Generic, TypeVar, overload
+from unicodedata import east_asian_width
 
+import pytz
 from django.apps import apps
 from django.conf import settings
 from django.core.exceptions import ValidationError as DjangoValidationError
@@ -682,21 +684,26 @@ def time_format(seconds, style=0):
     return retval.strip()
 
 
-def datetime_format(dtobj):
+def datetime_format(dtobj, time_zone=None):
     """
     Pretty-prints the time since a given time.
 
     Args:
-        dtobj (datetime): An datetime object, e.g. from Django's
-            `DateTimeField`.
+        dtobj (datetime): A datetime object, e.g. from Django's
+            ``DateTimeField``.
+        time_zone (pytz.timezone, optional): If provided, the current
+            time is converted to this time zone before comparing
+            against ``dtobj``. Use this when ``dtobj`` has already been
+            converted to a local time zone via ``utc_to_local``.
 
     Returns:
-        deltatime (str): A string describing how long ago `dtobj`
-            took place.
+        str: A string describing how long ago ``dtobj`` took place.
 
     """
 
     now = timezone.now()
+    if time_zone:
+        now = utc_to_local(now, time_zone)
 
     if dtobj.year < now.year:
         # another year (Apr 5, 2019)
@@ -2323,22 +2330,21 @@ def calledby(callerdepth=1):
 
 def m_len(target):
     """
-    Provides length checking for strings with MXP patterns, and falls
-    back to normal len for other objects.
+    Provides display-width length checking for strings, taking into account
+    MXP patterns and east-asian character widths.  Falls back to normal
+    ``len`` for non-string objects.
 
     Args:
         target (str): A string with potential MXP components
             to search.
 
     Returns:
-        length (int): The length of `target`, ignoring MXP components.
+        length (int): The visible width of `target`, ignoring MXP components
+            and counting east-asian characters as width 2.
 
     """
-    # Would create circular import if in module root.
-    from evennia.utils.ansi import ANSI_PARSER
-
-    if inherits_from(target, str) and "|lt" in target:
-        return len(ANSI_PARSER.strip_mxp(target))
+    if inherits_from(target, str):
+        return display_len(target)
     return len(target)
 
 
@@ -2422,13 +2428,12 @@ def at_search_result(matches, caller, query="", quiet=False, **kwargs):
         # group results by display name to properly disambiguate
         grouped_matches = defaultdict(list)
         for item in matches:
-            group_key = (
-                item.get_display_name(caller) if hasattr(item, "get_display_name") else query
-            )
-            grouped_matches[group_key].append(item)
+            item_key = item.get_display_name(caller) if hasattr(item, "get_display_name") else query
+            # the actual searching is case-insensitive, so we force grouping keys to lower
+            grouped_matches[item_key.lower()].append((item_key, item))
 
         for key, match_list in grouped_matches.items():
-            for num, result in enumerate(match_list):
+            for num, (result_key, result) in enumerate(match_list):
                 # we need to consider that result could be a Command, where .aliases
                 # is a list of strings
                 if hasattr(result.aliases, "all"):
@@ -2444,7 +2449,7 @@ def at_search_result(matches, caller, query="", quiet=False, **kwargs):
 
                 error += _MULTIMATCH_TEMPLATE.format(
                     number=num + 1,
-                    name=key,
+                    name=result_key,
                     aliases=" [{alias}]".format(alias=";".join(aliases)) if aliases else "",
                     info=result.get_extra_info(caller),
                 )
@@ -3124,3 +3129,28 @@ def value_is_integer(value):
         return False
 
     return True
+
+
+def utc_to_local(dtobj, time_zone):
+    """
+    Convert a datetime to a local time zone.
+
+    Handles both aware (with tzinfo) and naive datetimes. Naive
+    datetimes are assumed to be UTC (Evennia's default with
+    ``USE_TZ=True``).
+
+    Args:
+        dtobj (datetime): The datetime to convert.
+        time_zone (pytz.timezone): The target time zone.
+
+    Returns:
+        datetime: The converted datetime, or the original if
+            ``time_zone`` is falsy.
+
+    """
+    if not time_zone:
+        return dtobj
+    if dtobj.tzinfo is None:
+        # naive datetime — assume UTC
+        dtobj = pytz.utc.localize(dtobj)
+    return dtobj.astimezone(time_zone)

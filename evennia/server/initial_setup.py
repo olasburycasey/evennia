@@ -26,25 +26,14 @@ ERROR_NO_SUPERUSER = """
     """
 
 
-LIMBO_DESC = _(
-    """
+LIMBO_DESC = _("""
 Welcome to your new |wEvennia|n-based game! Visit https://www.evennia.com if you need
 help, want to contribute, report issues or just join the community.
 
 As a privileged user, write |wbatchcommand tutorial_world.build|n to build
 tutorial content. Once built, try |wintro|n for starting help and |wtutorial|n to
 play the demo game.
-"""
-)
-
-
-WARNING_POSTGRESQL_FIX = """
-    PostgreSQL-psycopg2 compatibility fix:
-    The in-game channels {chan1}, {chan2} and {chan3} were created,
-    but the superuser was not yet connected to them. Please use in
-    game commands to connect Account #1 to those channels when first
-    logging in.
-"""
+""")
 
 
 def _get_superuser_account():

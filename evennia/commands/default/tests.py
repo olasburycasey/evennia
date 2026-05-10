@@ -11,6 +11,7 @@ main test suite started with
  > python game/manage.py test.
 
 """
+
 import datetime
 from unittest.mock import MagicMock, Mock, patch
 
@@ -33,7 +34,11 @@ from evennia.commands.default import (
     general,
 )
 from evennia.commands.default import help as help_module
-from evennia.commands.default import syscommands, system, unloggedin
+from evennia.commands.default import (
+    syscommands,
+    system,
+    unloggedin,
+)
 from evennia.commands.default.cmdset_character import CharacterCmdSet
 from evennia.commands.default.muxcommand import MuxCommand
 from evennia.objects.models import ObjectDB
@@ -1695,7 +1700,7 @@ class TestBuilding(BaseEvenniaCommandTest):
         self.call(
             building.CmdTeleport(),
             "Obj = NotFound",
-            "Could not find 'NotFound'.|Destination not found.",
+            "Could not find 'NotFound'.",
         )
         self.call(
             building.CmdTeleport(),
@@ -1746,6 +1751,19 @@ class TestBuilding(BaseEvenniaCommandTest):
             building.CmdTag(),
             "/search testtag2:category1",
             "Found 1 object with tag 'testtag2' (category: 'category1'):",
+        )
+
+        # search by category only (no tag key)
+        self.call(
+            building.CmdTag(),
+            "/search :category1",
+            "Found 1 object with tag 'None' (category: 'category1'):",
+        )
+        # search by category with leading space
+        self.call(
+            building.CmdTag(),
+            "/search  :category1",
+            "Found 1 object with tag 'None' (category: 'category1'):",
         )
 
         self.call(building.CmdTag(), "/del Obj = testtag3", "Removed tag 'testtag3' from Obj.")
@@ -2282,6 +2300,7 @@ class TestSystemCommands(BaseEvenniaCommandTest):
         multimatch.matches = matches
 
         self.call(multimatch, "look", "")
+
 
 class TestPreCmdOutputTestable(BaseEvenniaCommandTest):
     def test_pre_cmd(self):

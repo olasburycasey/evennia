@@ -10,10 +10,11 @@ import time
 import typing
 from collections import defaultdict
 
-import evennia
 import inflect
 from django.conf import settings
 from django.utils.translation import gettext as _
+
+import evennia
 from evennia.commands import cmdset
 from evennia.commands.cmdsethandler import CmdSetHandler
 from evennia.objects.manager import ObjectManager
@@ -1506,15 +1507,17 @@ class DefaultObject(ObjectDB, metaclass=TypeclassBase):
             Append 01, 02 etc to obj.key. Checks next higher number in the
             same location, then adds the next number available
 
-            returns the new clone name on the form keyXX
+            Returns the new clone name on the form keyXX
             """
             key = self.key
-            num = sum(
-                1
-                for obj in self.location.contents
-                if obj.key.startswith(key) and obj.key.lstrip(key).isdigit()
-            )
-            return "%s%03i" % (key, num)
+            if not self.location:
+                # no location means no clone numbering
+                return key
+            suffixes = [obj.key.removeprefix(key) for obj in self.location.contents]
+            num = 1
+            if nums := [int(suffix) for suffix in suffixes if suffix.isdigit()]:
+                num = max(nums) + 1
+            return f"{key}{num:03d}"
 
         new_key = new_key or find_clone_key()
         new_obj = ObjectDB.objects.copy_object(self, new_key=new_key, **kwargs)
@@ -3487,6 +3490,9 @@ class ExitCommand(_COMMAND_DEFAULT_CLASS):
                 # No shorthand error message. Call hook.
                 self.obj.at_failed_traverse(self.caller)
 
+    def get_display_name(self, looker=None, **kwargs):
+        return self.obj.get_display_name(looker, **kwargs)
+
     def get_extra_info(self, caller, **kwargs):
         """
         Shows a bit of information on where the exit leads.
@@ -3506,7 +3512,7 @@ class ExitCommand(_COMMAND_DEFAULT_CLASS):
                 destination=self.obj.destination.get_display_name(caller, **kwargs)
             )
         else:
-            return " (%s)" % self.obj.get_display_name(caller, **kwargs)
+            return _(" (exit)")
 
 
 #

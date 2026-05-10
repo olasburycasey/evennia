@@ -393,6 +393,40 @@ class TestObjectManager(BaseEvenniaTest):
         self.assertEqual(self.obj1.attributes.get(key="phrase", category="adventure"), "plugh")
         self.assertEqual(obj2.attributes.get(key="phrase", category="adventure"), "plugh")
 
+    def test_copy_object_clone_key(self):
+        # reset key to avoid overlap with other tests
+        self.obj1.key = "CopyMe"
+        copied = self.obj1.copy()
+        self.assertEqual(copied.key, "CopyMe001")
+        copied2 = self.obj1.copy()
+        self.assertEqual(copied2.key, "CopyMe002")
+        # verify that it increments based on max existing identifier
+        # both for skipped numbers...
+        copied.key = "CopyMe003"
+        copied3 = self.obj1.copy()
+        self.assertEqual(copied3.key, "CopyMe004")
+        copied3.delete()
+        # ...and for duplicate numbers
+        copied.key = "CopyMe001"
+        copied2.key = "CopyMe001"
+        copied3 = self.obj1.copy()
+        self.assertEqual(copied3.key, "CopyMe002")
+        # and that sharing a partial prefix doesn't count
+        copied3.delete()
+        copied.key = "CopyMeMe002"
+        copied2.key = "CopyMe001"
+        copied3 = self.obj1.copy()
+        self.assertEqual(copied3.key, "CopyMe002")
+        # and that nothing breaks if something in the room doesn't share the prefix
+        copied3.key = "NotACopy"
+        copied4 = self.obj1.copy()
+        self.assertEqual(copied4.key, "CopyMe002")
+
+    def test_copy_object_no_location(self):
+        self.obj1.location = None
+        # we just want to make sure this doesn't error
+        self.assertIsNotNone(self.obj1.copy())
+
 
 class TestContentHandler(BaseEvenniaTest):
     "Test the ContentHandler (obj.contents)"
@@ -461,6 +495,33 @@ class TestContentHandler(BaseEvenniaTest):
         self.obj2.move_to(self.room1)
         self.obj2.move_to(self.room2)
         self.assertEqual(self.room2.contents, [self.obj1, self.obj2])
+
+
+class TestExitCommand(BaseEvenniaTest):
+    """Test the ExitCommand class."""
+
+    def _get_exit_cmd(self):
+        """Create an ExitCommand from the test exit object."""
+        cmdset = self.exit.create_exit_cmdset(self.exit)
+        return [cmd for cmd in cmdset.commands if cmd.key == "out"][0]
+
+    def test_get_display_name(self):
+        """ExitCommand.get_display_name should delegate to the exit object."""
+        cmd = self._get_exit_cmd()
+        self.assertEqual(cmd.get_display_name(self.char1), "out")
+
+    def test_get_extra_info_with_destination(self):
+        """ExitCommand.get_extra_info should show destination."""
+        cmd = self._get_exit_cmd()
+        info = cmd.get_extra_info(self.char1)
+        self.assertIn("Room2", info)
+
+    def test_get_extra_info_no_destination(self):
+        """ExitCommand.get_extra_info should return '(exit)' with no destination."""
+        self.exit.destination = None
+        cmd = self._get_exit_cmd()
+        info = cmd.get_extra_info(self.char1)
+        self.assertIn("exit", info)
 
 
 class SubAttributeProperty(AttributeProperty):
