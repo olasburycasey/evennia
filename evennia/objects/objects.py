@@ -1707,13 +1707,17 @@ class DefaultObject(ObjectDB, metaclass=TypeclassBase):
         key = kwargs.get("key", self.get_display_name(looker))
         raw_key = self.name
         key = ansi.ANSIString(key)  # this is needed to allow inflection of colored names
+        clean_key = key.clean()  # remove color code from object
+
         try:
-            plural = _INFLECT.plural(key, count)
+            plural = _INFLECT.plural(clean_key, count)
             plural = "{} {}".format(_INFLECT.number_to_words(count, threshold=12), plural)
+            plural = plural.replace(clean_key, str(key))
         except IndexError:
             # this is raised by inflect if the input is not a proper noun
             plural = key
-        singular = _INFLECT.an(key)
+        singular = _INFLECT.an(clean_key)
+        singular = singular.replace(clean_key, str(key))
         if not self.aliases.get(plural, category=self.plural_category):
             # we need to wipe any old plurals/an/a in case key changed in the interrim
             self.aliases.clear(category=self.plural_category)
