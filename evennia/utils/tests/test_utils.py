@@ -1087,3 +1087,24 @@ class TestTimeFormat(TestCase):
         # 3660 seconds (1 hour, 1 min) should format to 01:01
         self.assertEqual(time_format(3660), "01:01")
 
+
+
+class TestAllFromModule(TestCase):
+    """Tests for the all_from_module() function with dict subclasses."""
+
+    def test_dict_subclass_instance_is_included(self):
+        """A module-level dict subclass instance should not be filtered out."""
+
+        class MyDict(dict):
+            pass
+
+        # Create a temporary module and assign a dict subclass instance to it
+        import types
+        mod = types.ModuleType("test_module")
+        mod.MY_PROTOTYPE = MyDict({"key": "goblin", "typeclass": "typeclasses.characters.NPC"})
+
+        from evennia.utils.utils import all_from_module
+        result = all_from_module(mod)
+
+        self.assertIn("MY_PROTOTYPE", result)
+        self.assertEqual(result["MY_PROTOTYPE"]["key"], "goblin")
