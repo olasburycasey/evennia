@@ -96,7 +96,9 @@ def text(session, *args, **kwargs):
         # nick replacement
         puppet = session.puppet
         if puppet:
-            txt = puppet.nicks.nickreplace(txt, categories=("inputline"), include_account=True)
+            # don't apply nick substitution if player is inside EvEditor
+            if not puppet.ndb._eveditor:
+                txt = puppet.nicks.nickreplace(txt, categories=("inputline"), include_account=True)
         else:
             txt = session.account.nicks.nickreplace(
                 txt, categories=("inputline"), include_account=False
