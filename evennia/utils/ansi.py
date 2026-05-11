@@ -258,7 +258,7 @@ class ANSIParser(object):
     ansi_xterm256_bright_bg_map_dict = dict(ansi_xterm256_bright_bg_map)
 
     # prepare matching ansi codes overall
-    ansi_re = r"\033\[[0-9;]+m"
+    ansi_re = r"\033\[[0-9;]+m|\|lc.*?\|lt|\|lu.*?\|lt|\|le"
     ansi_regex = re.compile(ansi_re)
 
     # escapes - these double-chars will be replaced with a single

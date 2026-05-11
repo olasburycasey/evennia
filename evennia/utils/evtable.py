@@ -137,7 +137,7 @@ def _to_ansi(obj):
     if is_iter(obj):
         return [_to_ansi(o) for o in obj]
     else:
-        return ANSIString(strip_mxp(str(obj)))
+        return ANSIString(str(obj))
 
 
 _whitespace = "\t\n\x0b\x0c\r "
